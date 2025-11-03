@@ -1,8 +1,15 @@
 body {
-	background-color: #DDDDFF;
+  background-color: #DDDDFF;
 }
 
-#navigation { font-family:monospace; }
+a img {
+  border:0px; /* netscape/mozilla outlines images in anchors */
+}
+
+#header { margin-bottom:8px; }
+#header .title { font-style:italic; margin:0px; margin-bottom:4px; }
+
+#navigation { font-family:monospace; vertical-align:top; padding-right:16px; }
 #navigation img { width:32px; height:32px; }
 #navigation img.selector { width:16px; height:16px; }
-#naviagtion a { text-decoration:none; }
+#navigation a { text-decoration:none; }
