@@ -62,15 +62,47 @@
 </td>
 <td id="content">
 <!-- ======================= <content> ======================= -->
+<h2>ea_inode</h2>
+<h3>extended attributes and grub</h3>
+
+<h4>intro</h4>
 <p>
-  i'll be updating this space with various projects i am/have-been working on.
+I've been working on new a project that utilizes extended attributes.
+In the past, I always used XFS on my systems, mainly because of its extended attribute support.
+On my more recent systems, though, I've been going with ext4 because it's come so far, and on paper supports everything I need.
+During this project though, I started running into limitations. Some filesystem related, but the VFS itself is also limiting.
 </p>
-<table><tbody>
-  <tr class="content-link">
-    <td class="date">2025/NOV/27</td>
-    <td class="title"><a href="/tinkering/2025-11-ea-inode.html">ea_inode - extended attributes and grub</a></td>
-  </tr>
-</tbody></table>
+
+<h4>ea_inode</h4>
+<p>
+By default on ext, extended attributes must fit within the file's inode, or a single dedicated fs block attached to it.
+(There's also a VFS limit of 64 KiB for the total extended attribute table, but that's a whole other issue.)
+IMO, it's a real "640K should be enough..." moment. It mostly works for the current common use cases, mostly around security features like ACLs, but not much else.
+Ext4 does support storing larger attributes, but you must enable the "ea_inode" feature on the filesystem to enable it.
+At first, it's a super simple fix: "sudo tune2fs -O ea_inode /dev/sda2". Large attributes supported!
+But...
+</p>
+
+<h4>grub2</h4>
+<p>
+Grub refuses to access ext4 filesystems with the "ea_inode" feature set.
+That tune2fs call just rendered our system unbootable...
+Grub actually rejects any filesystem with features it doesn't recognize.
+I wouldn't argue that specific decision, but making that decision and then not keeping up with features added is, not great.
+And it isn't just ea_inode; features like large directories and metadata checksums had the same issue.
+At one point, mkfs.ext4 was setting a feature by default that grub wasn't updated for, making unbootable systems by default.
+</p>
+
+<h4>patch</h4>
+<p>
+Patches for some of the features eventually landed in grub2 (<a href="https://cgit.git.savannah.gnu.org/cgit/grub.git/commit/grub-core/fs/ext2.c?id=2e9fa73a040462b81bfbfe56c0bc7ad2d30b446b">example</a>), but so far, no ea_inode.
+Fortunately, the patches for those features are super easy to duplicate for our case.
+We only have to define the flag and add it to the list of features ignored by grub's ext2 driver (<a href="https://github.com/daumiller/grub2/commit/d34fd99b609eadebe677241819199d2f9fc7b988">my diff</a>).
+I don't know anywhere near enough about the driver to say whether this change could, somehow, result in issues; but it's working perfectly for me.
+</p>
+
+<p>&lt;3 &lt;3 &lt;3</p>
+<p>2025/NOV/27</p>
 <!-- ======================= <footer> ======================= -->
 </td></tr></table>
 </body>
