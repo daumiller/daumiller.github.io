@@ -1,0 +1,113 @@
+<!doctype html public "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+<!-- <3 hello there, welcome to my source <3 -->
+<head>
+  <title>context sensitive</title>
+  <link rel="stylesheet" href="/common/common.css" type="text/css">
+  <style type="text/css">
+    #content { font-family:monospace; }
+  </style>
+</head>
+<body>
+<!-- ======================= <header> ======================= -->
+<div id="header">
+  <h2 class="title">context sensitive</h2>
+  <div style="width:100%; height:1px; background-color:#F2C6DE;"></div>
+  <div style="width:100%; height:1px; background-color:#F7D9C4;"></div>
+  <div style="width:100%; height:1px; background-color:#FAEDCB;"></div>
+  <div style="width:100%; height:1px; background-color:#C9E4DE;"></div>
+  <div style="width:100%; height:1px; background-color:#C6DEF1;"></div>
+  <div style="width:100%; height:1px; background-color:#DBCDF0;"></div>
+</div>
+<!-- ======================= <navigation> ======================= -->
+<table id="page"><tbody><tr>
+<td id="navigation">
+  <table><tbody>
+    <tr>
+    	<td></td>
+    	<td><a href="/"><img src="/common/navicon/landing.gif" alt="landing page icon"></a></td>
+    	<td><a href="/">landing</a></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><a href="/wetware"><img src="/common/navicon/wetware.gif" alt="wetware page icon"></a></td>
+      <td><a href="/wetware">wetware</a></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><a href="/hardware"><img src="/common/navicon/hardware.gif" alt="hardware page icon"></a></td>
+      <td><a href="/hardware">hardware</a></td>
+    </tr>
+    <tr>
+      <td><img class="selector" src="/common/navicon/selector.gif" alt="selected item indicator"></td>
+      <td><a href="/tinkering"><img src="/common/navicon/tinkering.gif" alt="tinkering page icon"></a></td>
+      <td><a href="/tinkering">tinkering</a></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><a href="/rambling"><img src="/common/navicon/rambling.gif" alt="rambling page icon"></a></td>
+      <td><a href="/rambling">rambling</a></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><a href="/outbound"><img src="/common/navicon/outbound.gif" alt="outbound page icon"></a></td>
+      <td><a href="/outbound">outbound</a></td>
+    </tr>
+  </tbody></table>
+</td>
+<td id="content">
+<!-- ======================= <content> ======================= -->
+<h2>extended attributes II</h2>
+<h3>VFS and APFS</h3>
+
+<h4>recap</h4>
+<p>
+If you read my <a href="/tinkering/2025-11-ea-inode.html">previous entry</a> on xattrs, you may already know that i am an idiot.
+I went through a small amount of trouble modifying grub to allow booting ext4 with a feature enabled that allows larger attributes.
+</p>
+
+<h4>VFS</h4>
+<p>
+Buuut, that only got me a few extra KiB. The VFS & xattr APIs still limit the size  of all individual attributes, as well as the list of all attributes, to 64 KiB.
+That limit applies even if the filesystem itself supports larger attributes.
+This was a super bummer when I found out about it, especially finding out the dumb way, instead of reading ahead like i should have.
+</p>
+
+<h4>options</h4>
+<p>
+I went on a survey of various filesystems, and methods storing associated data: extended attributes versus named forks, NTFS, HFS+, APFS, BeFS, ...
+(Many years ago, i was working with xattrs in XFS, and could've swore this limit was not in place, but upon researching, i must be misremembering.)
+NTFS is suprisingly great for this. It has alternate data streams (ADS), that can store any arbitrary data for any path.
+The existing kernel drivers (the old r/o, and the newer r/w), as well as the new one being worked on right now (NTFSplus), do not support ADSs.
+<a href="https://github.com/tuxera/ntfs-3g">NTFS-3g</a> supports them beautifully, with "/path/to/file:stream", but is a FUSE-only driver, and (in my limited testing) doesn't handle permissions great for using as a dedicated FS.
+HFS+ is missing some features, and with BeFS you may as well just be running Haiku.
+</p>
+
+<h4>APFS</h4>
+<p>
+The new Apple filesystem, APFS, is great though!
+You can have a data and (single unnamed) resource fork, as well as arbitrarily large extended attributes.
+There is an <a href="https://github.com/sgan81/apfs-fuse">APFS FUSE driver</a>, that i had already been using, but, it's FUSE-only, as well as read-only.
+There is also <a href="https://github.com/linux-apfs/linux-apfs-rw">linux-apfs-rw</a>, a kernel driver, with write support, aaand everything in place internally for larger attributes and resource forks!
+But, linux xattr limits still stand in our way...
+</p>
+
+<h4>IOCTLs</h4>
+<p>
+Thankfully, the linux-apfs-rw driver is a fairly friendly codebase to work within.
+I was able to add new IOCTLs specifically for accessing extended attributes, and build a userspace library that uses them to mimic the xattr API, with limits removed/increased.
+(<a href="https://github.com/daumiller/linux-apfs-rw">My branch is here</a>, if you're curious. Though note it still needs cleanup, and isn't well tested yet.)
+</p>
+
+<h4>conclusion</h4>
+<p>
+After much filesystem fuckery, i've finally got an alternate data system that is actually usable.
+Now i can get back to working on my project!
+</p>
+
+<p>&lt;3 &lt;3 &lt;3</p>
+<p>2025/DEC/02</p>
+<!-- ======================= <footer> ======================= -->
+</td></tr></table>
+</body>
+</html>
